@@ -18,7 +18,7 @@ for i = 1:nBodies
         Y = mat.plasticity.Y;
         a = mat.plasticity.a;
         lines = {
-            sprintf('%s (Plastic)', bodyName)
+            sprintf('%s', bodyName)
             sprintf('  E = %.2e', E)
             sprintf('  ν = %.2f', nu)
             sprintf('  Y = %.2e', Y)
@@ -26,7 +26,7 @@ for i = 1:nBodies
         };
     else
         lines = {
-            sprintf('%s (Elastic)', bodyName)
+            sprintf('%s', bodyName)
             sprintf('  E = %.2e', E)
             sprintf('  ν = %.2f', nu)
         };

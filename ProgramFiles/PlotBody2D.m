@@ -14,7 +14,7 @@ markers = {'+','o','*','x','v','d','^','s','>','<'};
 
 body = problem.domains{i};
 coordinates = body.coordinates';
-hs = [];  % numeric array of handles
+hs = [];  
 mylegends = strings(0);
 
 mylegends(end+1) = "Body " + i;
@@ -60,18 +60,20 @@ end
 
 %% Draw Dirichlet + Neumann BCs
 for s = 1:length(BCsurfaces)
-    surf = BCsurfaces{s};
-    type = BCtypes{s};
+    surf  = BCsurfaces{s};
+    type  = BCtypes{s};
     label = BClabels{s};
 
     c = colorMap(colorIndex,:);
     colorIndex = colorIndex + 1;
 
     if type == "Dirichlet"
-        marker = markers{markDirichlet};
+        idx = mod(markDirichlet-1, length(markers)) + 1;
+        marker = markers{idx};
         markDirichlet = markDirichlet + 1;
     else
-        marker = markers{markNeumann};
+        idx = mod(markNeumann-1, length(markers)) + 1;
+        marker = markers{idx};
         markNeumann = markNeumann + 1;
     end
 
@@ -87,13 +89,13 @@ for s = 1:length(BCsurfaces)
             segs = surf.elements{e}.nodes;
             for j = 1:size(segs,1)
                 plot(coordinates(1,segs(j,:)),coordinates(2,segs(j,:)), ...
-                    '-','Color',c,'LineWidth',1.8);
+                     '-','Color',c,'LineWidth',1.8);
             end
         end
     end
 end
 
-%% Mortars (shared Master/Slave style)
+%% Mortars (shared style for Master + Slave)
 for k = 1:length(problem.problem.bcMortars)
 
     bc = problem.problem.bcMortars{k};
@@ -105,23 +107,26 @@ for k = 1:length(problem.problem.bcMortars)
     end
 
     if isMaster
-        surf = problem.problem.bodies{i}.surfaces{bc.id_surface1};
+        surf  = problem.problem.bodies{i}.surfaces{bc.id_surface1};
         label = sprintf("Mortar %d: Master", k);
     else
-        surf = problem.problem.bodies{i}.surfaces{bc.id_surface2};
+        surf  = problem.problem.bodies{i}.surfaces{bc.id_surface2};
         label = sprintf("Mortar %d: Slave", k);
     end
 
-    % shared style per mortar ID
+    % shared style for mortar ID
     if mortarStyles.isKey(k)
         st = mortarStyles(k);
-        c = st.color;
+        c      = st.color;
         marker = st.marker;
     else
         c = colorMap(colorIndex,:);
-        marker = markers{markMortar};
+        idx = mod(markMortar-1, length(markers)) + 1;
+        marker = markers{idx};
+
         mortarStyles(k) = struct('color',c,'marker',marker);
-        colorIndex = colorIndex + 1;
+
+        colorIndex  = colorIndex + 1;
         markMortar = markMortar + 1;
     end
 
