@@ -1,44 +1,46 @@
-function [] = PlotInputFn(problemToDraw)
+function [] = PlotInputFn(problemToDraw,version)
 
 f1 = figure;
 
 parts = split(problemToDraw,"_");
-
-if numel(parts) ~= 2
-    error("Bad input: problemToDraw must contain exactly one '_' (e.g. Hertz_Plastic, Lamalea_1)");
-end
-
 mainName = parts(1);
-subName  = parts(2);
 
-dataFile = fullfile("Problem_Input_Data", mainName + "_Struct" + ".mat");
-if ~isfile(dataFile)
-    error("Data file not found: %s", dataFile);
-end
+if mainName == "Hertz"
+    subName  = parts(2);
+    fullName = "input_" + mainName + "_" + subName + ".mat";
 
-S = load(dataFile);
-fn = fieldnames(S);
-dataCell = S.(fn{1});   % očekáváme, že je to cell array
-
-% --- Urči index podle subName
-if mainName == "Lamalea"
-    idx = str2double(subName);
-elseif mainName == "Hertz"
-    switch subName
-        case "Elastic"
-            idx = 1;
-        case "Plastic"
-            idx = 2;
-        otherwise
-            error("Unknown Hertz subName: %s", subName);
+    dataFile = fullfile("Problem_Input_Data", fullName);
+    if ~isfile(dataFile)
+        error("Data file not found: %s", dataFile);
     end
+
+    S = load(dataFile);
+    fn = fieldnames(S);
+    problemStruct = S.(fn{1});
+    problemStruct = problemStruct{version};
+
 else
-    error("Unknown mainName: %s", mainName);
+    baseName = "input_" + mainName;
+
+    perChunk = 4;                    
+    chunkID = ceil(version / perChunk);
+    localIdx = version - (chunkID-1)*perChunk;
+
+    fullName = sprintf("%s_part%d.mat", baseName, chunkID);
+    dataFile = fullfile("Problem_Input_Data", fullName);
+
+    if ~isfile(dataFile)
+        error("Data file not found: %s", dataFile);
+    end
+
+    S = load(dataFile);
+    fn = fieldnames(S);
+    chunk = S.(fn{1});                
+    problemStruct = chunk{localIdx};
 end
 
-problemStruct = dataCell{idx};
 
-nBodies     = length(problemStruct.bodies);
+nBodies     = length(problemStruct.problem.bodies);
 bodyColors  = lines(nBodies);  
 colorMap    = lines(50);        
 colorIndex  = 1;
@@ -48,7 +50,7 @@ allLegends  = {};
 ax1 = subplot(2,1,1);
 hold(ax1,"on")
 for i = 1:nBodies
-    [hs, mylegends, colorIndex] = PlotBody2D(problemStruct.bodies{i}, bodyColors(i,:), colorMap, colorIndex);
+    [hs, mylegends, colorIndex] = PlotBody2D(problemStruct,i, bodyColors(i,:), colorMap, colorIndex);
     allHandles = [allHandles, hs];
     allLegends = [allLegends, mylegends];
 end
@@ -56,7 +58,9 @@ legend(ax1, allHandles, allLegends, 'FontSize', PlotSetting.FontSize);
 axis(ax1,'equal')
 
 ax2 = subplot(2,1,2);
-PlotMaterial(problemStruct.bodies, ax2, bodyColors);
+PlotMaterial(problemStruct.problem.bodies, ax2, bodyColors);
 hold off
+set(gcf,'Units','normalized','OuterPosition',[0 0 1 1]);
+
 
 end
